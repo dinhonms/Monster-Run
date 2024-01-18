@@ -37,15 +37,15 @@ namespace Architecture
             {
                 MonsterBehaviour newMonster = InstantiateMonster();
                 newMonster.SetEnableb(false);
-                
+
                 monsters.Add(newMonster);
             }
         }
 
         private MonsterBehaviour InstantiateMonster()
         {
-            var monster = Instantiate(_monsterPrefab, _pool);
-            monster.SetPosition(_startPoint.position);
+            Vector3 newPosition = new Vector3(_startPoint.position.x, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
+            var monster = Instantiate(_monsterPrefab, newPosition, Quaternion.identity, _pool);
             monster.SetGameObjectName();
 
             return monster;
@@ -71,7 +71,6 @@ namespace Architecture
             }
 
             MonsterBehaviour newMonster = InstantiateMonster();
-            newMonster.SetPosition(_startPoint.position);
             newMonster.SetEnableb(true);
 
             if (monsters.Count <= _maxCapacity)

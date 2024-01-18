@@ -19,6 +19,7 @@ namespace Behaviour
         private UnityAction onDidFinish;
         private string _monsterName;
         private WaitForSeconds waitForSeconds;
+        private bool isTheSlowest;
 
         private void Awake()
         {
@@ -60,9 +61,12 @@ namespace Behaviour
             SetIsRunning(false);
             _spriteRend.enabled = false;
 
-            onDidFinish?.Invoke();
+            if (isTheSlowest)
+            {
+                onDidFinish?.Invoke();
 
-            onDidFinish = null;
+                onDidFinish = null;
+            }
 
             StartCoroutine(DisableAfterTime());
 
@@ -72,6 +76,9 @@ namespace Behaviour
 
                 SetEnableb(false);
             }
+
+            if (!isTheSlowest)
+                return;
         }
 
         private Color GenerateRandomColor()
@@ -94,6 +101,7 @@ namespace Behaviour
         public MonsterBehaviour Initialize(float finishLinePos)
         {
             this.finishLinePos = finishLinePos;
+            isTheSlowest = false;
 
             RandomSpeed();
             SetEnableb(true);
@@ -155,6 +163,11 @@ namespace Behaviour
         public string GetName()
         {
             return this._monsterName;
+        }
+
+        public void SetAsSlowest()
+        {
+            isTheSlowest = true;
         }
     }
 }

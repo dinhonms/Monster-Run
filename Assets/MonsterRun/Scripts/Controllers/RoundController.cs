@@ -53,36 +53,50 @@ namespace Controller
 
             amountMonsters = GetMonstersByRound();
 
+            SetUpMonsters();
+
+            onStarRound?.Invoke(_nextRoundInterval, amountMonsters);
+        }
+
+        private void SetUpMonsters()
+        {
             for (int i = 0; i < amountMonsters; i++)
             {
                 var monster = MonsterFactory.Instance.GetOrCreateMonster();
                 roundMonsters.Add(monster);
             }
 
-            foreach (var monster in roundMonsters)
+            MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault();
+            var cSpeed = roundMonsters[0].GetSpeed();
+
+            for (int a = 0; a < roundMonsters.Count; a++)
             {
-                monster.Initialize(_finishLine.position.x)
+                roundMonsters[a].Initialize(_finishLine.position.x)
                     .SetIsRunning(true)
-                    .SubscribeSpeedChanged(onSpeedChanged)
-                    .SubscribeOnDidFinish(OnMonsterDidFinish);
+                    .SubscribeSpeedChanged(onSpeedChanged);
+
+                if (roundMonsters[a].GetSpeed() < cSpeed)
+                {
+                    cSpeed = roundMonsters[a].GetSpeed();
+                    slowestMonster = roundMonsters[a];
+                }
             }
 
-            onStarRound?.Invoke(_nextRoundInterval, amountMonsters);
+            slowestMonster.SubscribeOnDidFinish(OnMonsterDidFinish);
+            slowestMonster.SetAsSlowest();
         }
 
         private void OnMonsterDidFinish()
         {
-            if (IsTheresAMonsterStillRunning())
-                return;
-
-            StartCoroutine(HandleNextRounds());
+            StartCoroutine(HandleNextRound());
         }
 
+        [Obsolete]
         private bool IsTheresAMonsterStillRunning()
         {
             foreach (var monster in roundMonsters)
             {
-                if(monster.GetIsRunning())
+                if (monster.GetIsRunning())
                 {
                     // Debug.Log(new StringBuilder($"Monster {monster.GetName()} is istill Running!"));
                     return true;
@@ -92,7 +106,7 @@ namespace Controller
             return false;
         }
 
-        private IEnumerator HandleNextRounds()
+        private IEnumerator HandleNextRound()
         {
             yield return waitForSeconds;
 
