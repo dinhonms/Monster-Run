@@ -12,13 +12,13 @@ namespace Behaviour
         [SerializeField] ProceduralNameGenerator _proceduralNameGenerator;
 
         private Transform thisTransform;
-        private bool keepRunning;
+        private bool isRunning;
         private float finishLinePos;
         private float speed;
         private UnityAction<float> onSpeedChanged;
         private UnityAction onDidFinish;
-        private bool hasFinishedRunning;
         private string _monsterName;
+        private WaitForSeconds waitForSeconds;
 
         private void Awake()
         {
@@ -27,6 +27,8 @@ namespace Behaviour
             _monsterName = _proceduralNameGenerator.GenerateRandomName();
 
             SetEnableb(false);
+
+            waitForSeconds = new WaitForSeconds(1f);
         }
 
         private void OnSpeedChanged(float newSpeed)
@@ -42,7 +44,7 @@ namespace Behaviour
 
         private void Update()
         {
-            if (keepRunning)
+            if (isRunning)
             {
                 thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
 
@@ -55,19 +57,21 @@ namespace Behaviour
 
         private void FinishRunning()
         {
-            hasFinishedRunning = true;
-            KeepRunning(false);
+            SetIsRunning(false);
+            _spriteRend.enabled = false;
 
-            StartCoroutine(FinishAfterTime());
+            onDidFinish?.Invoke();
 
-            IEnumerator FinishAfterTime()
+            onDidFinish = null;
+
+            StartCoroutine(DisableAfterTime());
+
+            IEnumerator DisableAfterTime()
             {
-                yield return new WaitForSeconds(1f);
+                yield return waitForSeconds;
 
                 SetEnableb(false);
             }
-
-            onDidFinish?.Invoke();
         }
 
         private Color GenerateRandomColor()
@@ -84,11 +88,11 @@ namespace Behaviour
         public void SetEnableb(bool enabled)
         {
             gameObject.SetActive(enabled);
+            _spriteRend.enabled = enabled;
         }
 
         public MonsterBehaviour Initialize(float finishLinePos)
         {
-            hasFinishedRunning = false;
             this.finishLinePos = finishLinePos;
 
             RandomSpeed();
@@ -107,9 +111,9 @@ namespace Behaviour
             thisTransform.position = position;
         }
 
-        public MonsterBehaviour KeepRunning(bool keepRunning)
+        public MonsterBehaviour SetIsRunning(bool isRunning)
         {
-            this.keepRunning = keepRunning;
+            this.isRunning = isRunning;
 
             return this;
         }
@@ -138,14 +142,19 @@ namespace Behaviour
             this.onDidFinish += onDidFinish;
         }
 
-        public bool HasFinished()
+        public bool GetIsRunning()
         {
-            return hasFinishedRunning;
+            return isRunning;
         }
 
         public void SetGameObjectName()
         {
             this.gameObject.name = _monsterName;
+        }
+
+        public string GetName()
+        {
+            return this._monsterName;
         }
     }
 }

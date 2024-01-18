@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Architecture;
 using Behaviour;
 using UnityEngine;
@@ -26,9 +27,13 @@ namespace Controller
         private UnityAction<float> onSpeedChanged;
         private UnityAction<float, int> onStarRound;
 
+        private Dictionary<string, bool> checkFinishDict = new Dictionary<string, bool>();
+        private WaitForSeconds waitForSeconds;
+
         private void Awake()
         {
             Instance = this;
+            waitForSeconds = new WaitForSeconds(_nextRoundInterval);
         }
 
         private void OnDestroy()
@@ -39,6 +44,9 @@ namespace Controller
 
         public void InitializeRound()
         {
+            if (checkFinishDict.Any())
+                checkFinishDict.Clear();
+
             currentRound++;
 
             roundMonsters = new List<MonsterBehaviour>();
@@ -54,7 +62,7 @@ namespace Controller
             foreach (var monster in roundMonsters)
             {
                 monster.Initialize(_finishLine.position.x)
-                    .KeepRunning(true)
+                    .SetIsRunning(true)
                     .SubscribeSpeedChanged(onSpeedChanged)
                     .SubscribeOnDidFinish(OnMonsterDidFinish);
             }
@@ -64,18 +72,19 @@ namespace Controller
 
         private void OnMonsterDidFinish()
         {
-            if (IsSomeMonsterStillRunning())
+            if (IsTheresAMonsterStillRunning())
                 return;
 
             StartCoroutine(HandleNextRounds());
         }
 
-        private bool IsSomeMonsterStillRunning()
+        private bool IsTheresAMonsterStillRunning()
         {
             foreach (var monster in roundMonsters)
             {
-                if (!monster.HasFinished())
+                if(monster.GetIsRunning())
                 {
+                    // Debug.Log(new StringBuilder($"Monster {monster.GetName()} is istill Running!"));
                     return true;
                 }
             }
@@ -85,7 +94,7 @@ namespace Controller
 
         private IEnumerator HandleNextRounds()
         {
-            yield return new WaitForSeconds(_nextRoundInterval);
+            yield return waitForSeconds;
 
             InitializeRound();
         }
@@ -94,7 +103,7 @@ namespace Controller
         {
             foreach (var monster in roundMonsters)
             {
-                monster.KeepRunning(false);
+                monster.SetIsRunning(false);
             }
         }
 
@@ -102,7 +111,7 @@ namespace Controller
         {
             foreach (var monster in roundMonsters)
             {
-                monster.KeepRunning(true);
+                monster.SetIsRunning(true);
             }
         }
 

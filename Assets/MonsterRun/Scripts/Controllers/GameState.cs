@@ -4,6 +4,7 @@ namespace Controller
 {
     public enum GameStates
     {
+        MENU,
         PLAY,
         PAUSE,
         GAME_OVER
@@ -11,7 +12,7 @@ namespace Controller
 
     public static class GameState
     {
-        private static GameStates currentGameState;
+        private static GameStates currentGameState = GameStates.MENU;
 
         private static UnityEvent<GameStates> OnStateChanged;
 
