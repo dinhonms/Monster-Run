@@ -47,7 +47,7 @@ namespace Controller
             RoundController.Instance.SetSpeedChanged(value);
         }
 
-        public void SubscribeOnStartNextRound(UnityAction<float> onNextRound)
+        public void SubscribeOnStartNextRound(UnityAction<float, int> onNextRound)
         {
             RoundController.Instance.SubscribeOnStartNextRound(onNextRound);
         }

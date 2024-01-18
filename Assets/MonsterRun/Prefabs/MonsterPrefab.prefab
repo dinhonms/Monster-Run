@@ -94,6 +94,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7764519866597386602}
   - component: {fileID: 8390467778324914853}
+  - component: {fileID: 4248482352649552038}
   m_Layer: 0
   m_Name: MonsterPrefab
   m_TagString: Untagged
@@ -130,5 +131,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _monsterSO: {fileID: 11400000, guid: a114a57372a904d168d226fe061598cc, type: 2}
-  _speed: 0
   _spriteRend: {fileID: 7355003259855162155}
+  _proceduralNameGenerator: {fileID: 4248482352649552038}
+--- !u!114 &4248482352649552038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4529934114961999421}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b6f9eb275e514c1ea805c61a02cdbba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _minCharac: 4
+  _maxCharac: 10

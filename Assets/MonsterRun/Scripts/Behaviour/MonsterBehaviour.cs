@@ -9,6 +9,7 @@ namespace Behaviour
     {
         [SerializeField] MonsterSO _monsterSO;
         [SerializeField] SpriteRenderer _spriteRend;
+        [SerializeField] ProceduralNameGenerator _proceduralNameGenerator;
 
         private Transform thisTransform;
         private bool keepRunning;
@@ -17,11 +18,13 @@ namespace Behaviour
         private UnityAction<float> onSpeedChanged;
         private UnityAction onDidFinish;
         private bool hasFinishedRunning;
+        private string _monsterName;
 
         private void Awake()
         {
             thisTransform = transform;
             _spriteRend.color = GenerateRandomColor();
+            _monsterName = _proceduralNameGenerator.GenerateRandomName();
 
             SetEnableb(false);
         }
@@ -53,6 +56,7 @@ namespace Behaviour
         private void FinishRunning()
         {
             hasFinishedRunning = true;
+            KeepRunning(false);
 
             StartCoroutine(FinishAfterTime());
 
@@ -137,6 +141,11 @@ namespace Behaviour
         public bool HasFinished()
         {
             return hasFinishedRunning;
+        }
+
+        public void SetGameObjectName()
+        {
+            this.gameObject.name = _monsterName;
         }
     }
 }

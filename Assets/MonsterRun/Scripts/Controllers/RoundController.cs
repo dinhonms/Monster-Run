@@ -22,8 +22,9 @@ namespace Controller
         private int currentMonstersCount;
 
         private List<MonsterBehaviour> roundMonsters;
+        private int amountMonsters;
         private UnityAction<float> onSpeedChanged;
-        private UnityAction<float> onStartNextRound;
+        private UnityAction<float, int> onStarRound;
 
         private void Awake()
         {
@@ -33,7 +34,7 @@ namespace Controller
         private void OnDestroy()
         {
             onSpeedChanged = null;
-            onStartNextRound = null;
+            onStarRound = null;
         }
 
         public void InitializeRound()
@@ -42,7 +43,7 @@ namespace Controller
 
             roundMonsters = new List<MonsterBehaviour>();
 
-            var amountMonsters = GetMonstersByRound();
+            amountMonsters = GetMonstersByRound();
 
             for (int i = 0; i < amountMonsters; i++)
             {
@@ -57,6 +58,8 @@ namespace Controller
                     .SubscribeSpeedChanged(onSpeedChanged)
                     .SubscribeOnDidFinish(OnMonsterDidFinish);
             }
+
+            onStarRound?.Invoke(_nextRoundInterval, amountMonsters);
         }
 
         private void OnMonsterDidFinish()
@@ -82,8 +85,6 @@ namespace Controller
 
         private IEnumerator HandleNextRounds()
         {
-            onStartNextRound?.Invoke(_nextRoundInterval);
-
             yield return new WaitForSeconds(_nextRoundInterval);
 
             InitializeRound();
@@ -130,9 +131,9 @@ namespace Controller
             onSpeedChanged?.Invoke(value);
         }
 
-        internal void SubscribeOnStartNextRound(UnityAction<float> onNextRound)
+        internal void SubscribeOnStartNextRound(UnityAction<float, int> onNextRound)
         {
-            this.onStartNextRound += onNextRound;
+            this.onStarRound += onNextRound;
         }
     }
 }

@@ -2,7 +2,8 @@
     "name": "Behaviour",
     "rootNamespace": "Behaviour",
     "references": [
-        "GUID:eb40f6cef1f7b495789694ce1a66c9b5"
+        "GUID:eb40f6cef1f7b495789694ce1a66c9b5",
+        "GUID:09b553acc121c4713adbbd09d3a808c4"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

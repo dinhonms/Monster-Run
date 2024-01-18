@@ -15,23 +15,29 @@ namespace Controller
         [SerializeField] TMPro.TextMeshProUGUI _displayRound;
         [SerializeField] TMPro.TextMeshProUGUI _displaySpeedRate;
         [SerializeField] TMPro.TextMeshProUGUI _displayRoundTimeInterval;
+        [SerializeField] TMPro.TextMeshProUGUI _displayTotalMonstersCreated;
         [SerializeField] Button _playButton;
         [SerializeField] Button _pauseButton;
         [SerializeField] Canvas _gameOverCanvas;
 
         private void Start()
         {
-            _gamePlayController.SubscribeOnStartNextRound(OnStartNextRound);
+            _gamePlayController.SubscribeOnStartNextRound(OnStartRound);
         }
 
-        private void OnStartNextRound(float roundTimeInterval)
+        private void OnStartRound(float roundTimeInterval, int amountMonsters)
         {
-            _gameOverCanvas.enabled = true;
+            SetAmountMonsters(amountMonsters);
+            SetRound(_gamePlayController.GetCurrentRound());
 
-            StartCoroutine(StartCountNextRoundTime(roundTimeInterval));
+            if (_gamePlayController.GetCurrentRound() <= 1)
+                return;
+
+            // _gameOverCanvas.enabled = true;
+            // StartCoroutine(StartCountNextRoundTime(roundTimeInterval, amountMonsters));
         }
 
-        private IEnumerator StartCountNextRoundTime(float roundTimeInterval)
+        private IEnumerator StartCountNextRoundTime(float roundTimeInterval, int amountMonsters)
         {
             var time = roundTimeInterval;
 
@@ -58,11 +64,13 @@ namespace Controller
         public void Play()
         {
             _gamePlayController.Play();
-
             _playButton.gameObject.SetActive(false);
             _pauseButton.gameObject.SetActive(true);
+        }
 
-            SetRound(_gamePlayController.GetCurrentRound());
+        private void SetAmountMonsters(int amountMonsters)
+        {
+            _displayTotalMonstersCreated.text = amountMonsters.ToString();
         }
 
         public void PauseOrResume()
