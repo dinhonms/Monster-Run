@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Behaviour;
 using UnityEngine;
@@ -10,8 +11,12 @@ namespace Architecture
 
 
         [SerializeField] MonsterBehaviour _monsterPrefab;
+        [SerializeField] Transform _pool;
         [SerializeField] int _startMonstersAmount = 10;
+        [SerializeField] int _maxCapacity = 1000;
         [SerializeField] Transform _startPoint;
+        [SerializeField] float _minYOffset;
+        [SerializeField] float _maxYOffset;
 
         private List<MonsterBehaviour> monsters = new List<MonsterBehaviour>();
 
@@ -37,7 +42,7 @@ namespace Architecture
 
         private MonsterBehaviour InstantiateMonster()
         {
-            var monster = Instantiate(_monsterPrefab, _startPoint);
+            var monster = Instantiate(_monsterPrefab, _pool);
             monster.SetPosition(_startPoint.position);
 
             return monster;
@@ -54,7 +59,8 @@ namespace Architecture
             {
                 if (IsAvailable(monst))
                 {
-                    monst.SetPosition(_startPoint.position);
+                    Vector3 newPosition = new Vector3(_startPoint.position.x, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
+                    monst.SetPosition(newPosition);
 
                     return monst;
                 }
@@ -62,10 +68,19 @@ namespace Architecture
 
             MonsterBehaviour newMonster = InstantiateMonster();
             newMonster.SetPosition(_startPoint.position);
-            
-            monsters.Add(newMonster);
+
+            if (monsters.Count <= _maxCapacity)
+                monsters.Add(newMonster);
 
             return newMonster;
+        }
+
+        private float GetYOffsetPos()
+        {
+            float yOffset = 0f;
+            yOffset = UnityEngine.Random.Range(_minYOffset, _maxYOffset);
+
+            return yOffset;
         }
     }
 }

@@ -1,20 +1,24 @@
 using System.Collections;
 using ScriptableObjects;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Behaviour
 {
     public class MonsterBehaviour : MonoBehaviour
     {
         [SerializeField] MonsterSO _monsterSO;
-        [SerializeField] float _speed;
         [SerializeField] SpriteRenderer _spriteRend;
 
         private Transform thisTransform;
         private bool keepRunning;
         private float finishLinePos;
+        private float speed;
+        private UnityAction<float> onSpeedChanged;
+        private UnityAction onDidFinish;
+        private bool hasFinishedRunning;
 
-        private void Start()
+        private void Awake()
         {
             thisTransform = transform;
             _spriteRend.color = GenerateRandomColor();
@@ -22,11 +26,22 @@ namespace Behaviour
             SetEnableb(false);
         }
 
+        private void OnSpeedChanged(float newSpeed)
+        {
+            this.speed = newSpeed;
+        }
+
+        private void OnDestroy()
+        {
+            UnSubscribeSpeedChanged();
+            onDidFinish = null;
+        }
+
         private void Update()
         {
             if (keepRunning)
             {
-                thisTransform.Translate(_speed * Time.deltaTime, 0f, 0f);
+                thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
 
                 if (thisTransform.position.x > finishLinePos)
                 {
@@ -37,6 +52,8 @@ namespace Behaviour
 
         private void FinishRunning()
         {
+            hasFinishedRunning = true;
+
             StartCoroutine(FinishAfterTime());
 
             IEnumerator FinishAfterTime()
@@ -45,6 +62,8 @@ namespace Behaviour
 
                 SetEnableb(false);
             }
+
+            onDidFinish?.Invoke();
         }
 
         private Color GenerateRandomColor()
@@ -65,6 +84,7 @@ namespace Behaviour
 
         public MonsterBehaviour Initialize(float finishLinePos)
         {
+            hasFinishedRunning = false;
             this.finishLinePos = finishLinePos;
 
             RandomSpeed();
@@ -75,7 +95,7 @@ namespace Behaviour
 
         private void RandomSpeed()
         {
-            _speed = _monsterSO.GetSpeed();
+            speed = _monsterSO.GetSpeed();
         }
 
         public void SetPosition(Vector3 position)
@@ -83,9 +103,40 @@ namespace Behaviour
             thisTransform.position = position;
         }
 
-        public void KeepRunning(bool keepRunning)
+        public MonsterBehaviour KeepRunning(bool keepRunning)
         {
             this.keepRunning = keepRunning;
+
+            return this;
+        }
+
+        public MonsterBehaviour SubscribeSpeedChanged(UnityAction<float> onSpeedChanged)
+        {
+            this.onSpeedChanged += onSpeedChanged;
+
+            this.onSpeedChanged += OnSpeedChanged;
+
+            return this;
+        }
+
+        private void UnSubscribeSpeedChanged()
+        {
+            this.onSpeedChanged = null;
+        }
+
+        public float GetSpeed()
+        {
+            return speed;
+        }
+
+        public void SubscribeOnDidFinish(UnityAction onDidFinish)
+        {
+            this.onDidFinish += onDidFinish;
+        }
+
+        public bool HasFinished()
+        {
+            return hasFinishedRunning;
         }
     }
 }

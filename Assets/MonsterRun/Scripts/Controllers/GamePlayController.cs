@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -7,27 +6,50 @@ namespace Controller
 {
     public class GamePlayController : MonoBehaviour
     {
-        [SerializeField] RoundController _roundController;
-
         public void Play()
         {
-            _roundController.InitializeGame();
+            RoundController.Instance.InitializeRound();
 
             GameState.SetCurrentGameState(GameStates.PLAY);
         }
 
-        public void Pause()
+        public void PauseOrResume()
         {
-            _roundController.PauseGame();
+            if (GameState.GetCurrentGameState() == GameStates.PLAY)
+            {
+                RoundController.Instance.PauseGame();
 
-            GameState.SetCurrentGameState(GameStates.PAUSE);
+                GameState.SetCurrentGameState(GameStates.PAUSE);
+            }
+
+            else
+            {
+                RoundController.Instance.ResumeGame();
+
+                GameState.SetCurrentGameState(GameStates.PLAY);
+            }
         }
 
         public void Resume()
         {
-            _roundController.ResumeGame();
-            
+            RoundController.Instance.ResumeGame();
+
             GameState.SetCurrentGameState(GameStates.PAUSE);
+        }
+
+        public int GetCurrentRound()
+        {
+            return RoundController.Instance.GetCurrentRound();
+        }
+
+        public void SetSpeedChanged(float value)
+        {
+            RoundController.Instance.SetSpeedChanged(value);
+        }
+
+        public void SubscribeOnStartNextRound(UnityAction<float> onNextRound)
+        {
+            RoundController.Instance.SubscribeOnStartNextRound(onNextRound);
         }
     }
 }
