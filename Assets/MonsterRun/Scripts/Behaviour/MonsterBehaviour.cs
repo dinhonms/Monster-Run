@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Events;
+using Util;
 
 namespace Behaviour
 {
@@ -11,28 +13,23 @@ namespace Behaviour
         [SerializeField] MonsterSO _monsterSO;
         [SerializeField] Transform thisTransform;
         [SerializeField] SpriteRenderer _spriteRend;
-        [SerializeField] ProceduralNameGenerator _proceduralNameGenerator;
         [SerializeField] bool _useAsync;
-        [SerializeField] bool _useRigidbody;
-        // [SerializeField] Rigidbody2D rigidbody2D;
 
         private bool isRunning;
         private float finishLinePos;
-        private bool isReadyToBePooled;
         private float speed;
         private UnityAction<float> onSpeedChanged;
         private UnityAction onDidFinish;
         private string _monsterName;
         private WaitForSeconds waitForSeconds;
         private bool isTheSlowest;
-        private bool isInitialized;
         private UnityAction<MonsterBehaviour> onBecomingReady;
-
+        private bool alreadyFinished;
 
         private void Awake()
         {
-            _spriteRend.color = GenerateRandomColor();
-            _monsterName = _proceduralNameGenerator.GenerateRandomName();
+            _spriteRend.color = Utilities.GenerateRandomColor();
+            _monsterName = Utilities.GenerateRandomName();
 
             SetEnableb(false);
 
@@ -48,8 +45,7 @@ namespace Behaviour
         {
             if (isRunning)
             {
-                // if (!_useRigidbody)
-                    thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
+                thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
 
                 if (thisTransform.position.x > finishLinePos)
                 {
@@ -58,14 +54,7 @@ namespace Behaviour
             }
         }
 
-        // private void FixedUpdate()
-        // {
-        //     if (_useRigidbody && isRunning)
-        //     {
-        //         rigidbody2D.velocity = new Vector2(speed, 0);
-        //     }
-        // }
-
+        [Obsolete]
         private void OnSpeedChanged(float newSpeed)
         {
             this.speed = newSpeed;
@@ -74,7 +63,6 @@ namespace Behaviour
         private void FinishRunning()
         {
             SetIsRunning(false);
-            isInitialized = false;
 
             if (isTheSlowest)
             {
@@ -96,7 +84,6 @@ namespace Behaviour
             {
                 yield return waitForSeconds;
 
-                isReadyToBePooled = true;
                 SetEnableb(false);
 
                 onBecomingReady?.Invoke(this);
@@ -109,60 +96,20 @@ namespace Behaviour
                 if (gameObject == null)
                     return;
 
-                isReadyToBePooled = true;
                 SetEnableb(false);
 
                 onBecomingReady?.Invoke(this);
             }
         }
 
-        private Color GenerateRandomColor()
-        {
-            var color = new Color(
-                Random.Range(0f, 1f),
-                Random.Range(0f, 1f),
-                Random.Range(0f, 1f)
-            );
-
-            return color;
-        }
-
-        public MonsterBehaviour SetEnableb(bool enabled)
-        {
-            gameObject.SetActive(enabled);
-
-            return this;
-        }
-
-        public MonsterBehaviour Initialize(float finishLinePos, bool isReadyToBePooled = false)
+        public MonsterBehaviour Initialize(float finishLinePos)
         {
             this.finishLinePos = finishLinePos;
-            this.isReadyToBePooled = isReadyToBePooled;
 
             isTheSlowest = false;
-            isInitialized = true;
 
             RandomSpeed();
             SetEnableb(true);
-
-            return this;
-        }
-
-        private void RandomSpeed()
-        {
-            speed = _monsterSO.GetSpeed();
-        }
-
-        public MonsterBehaviour SetPosition(Vector3 position)
-        {
-            thisTransform.position = position;
-
-            return this;
-        }
-
-        public MonsterBehaviour SetIsRunning(bool isRunning)
-        {
-            this.isRunning = isRunning;
 
             return this;
         }
@@ -196,6 +143,48 @@ namespace Behaviour
             this.onBecomingReady = onBecomingReady;
         }
 
+        #region GETTTERS
+
+        public bool GetIsRunning() => isRunning;
+
+        public string GetName() => this._monsterName;
+        public float GetSpeed() => speed;
+
+        public SpriteRenderer GetSpriteRend() => _spriteRend;
+
+        public bool AlreadyFinished() => alreadyFinished;
+
+        #endregion
+
+        private void RandomSpeed()
+        {
+            speed = _monsterSO.GetSpeed();
+        }
+
+        #region SETTERS
+
+        public MonsterBehaviour SetEnableb(bool enabled)
+        {
+            gameObject.SetActive(enabled);
+
+            return this;
+        }
+
+        public MonsterBehaviour SetPosition(Vector3 position)
+        {
+            thisTransform.position = position;
+
+            return this;
+        }
+
+        public MonsterBehaviour SetIsRunning(bool isRunning)
+        {
+            this.isRunning = isRunning;
+            alreadyFinished = false;
+
+            return this;
+        }
+
         public void SetGameObjectName()
         {
             this.gameObject.name = _monsterName;
@@ -211,18 +200,12 @@ namespace Behaviour
             _spriteRend.sortingOrder = lastSortingOrder;
         }
 
-        #region GET
+        public MonsterBehaviour SetAlreadyFinished()
+        {
+            alreadyFinished = true;
 
-        public bool GetIsRunning() => isRunning;
-
-        public string GetName() => this._monsterName;
-        public float GetSpeed() => speed;
-
-        public SpriteRenderer GetSpriteRend() => _spriteRend;
-
-        public bool GetIsReadyToBePooled() => isReadyToBePooled;
-
-        public bool GetIsInitialized() => isInitialized;
+            return this;
+        }
 
         #endregion
 

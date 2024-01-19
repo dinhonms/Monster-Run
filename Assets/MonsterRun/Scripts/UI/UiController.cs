@@ -22,15 +22,15 @@ namespace Controller
         [SerializeField] GameObject _playButtonOb;
         [SerializeField] GameObject _pauseButtonObj;
         [SerializeField] GameObject _gameOverCanvas;
-        private WaitForSeconds waitForSeconds;
         StringBuilder timer = new StringBuilder();
+
+        [SerializeField] string _pauseStr = "Pause";
+        [SerializeField] string _playStr = "Play";
 
         private void Start()
         {
             _gamePlayController.SubscribeOnRoundStarted(OnStartRound);
             _gamePlayController.SubscribeOnRoundEnded(OnRoundEnded);
-
-            waitForSeconds = new WaitForSeconds(1f);
 
             InitializeUIState();
         }
@@ -62,9 +62,9 @@ namespace Controller
         private void OnRoundEnded(float roundTimeInterval)
         {
             _gameOverCanvas.SetActive(true);
-            _pauseText.text = "Pause";
+            _pauseText.text = _pauseStr;
 
-            StartCoroutine(HideGameOverCanvas());
+            StartCoroutine(HideGameOverCanvas(roundTimeInterval));
         }
 
         private void ClearElapsedTime()
@@ -72,9 +72,9 @@ namespace Controller
             _timerComponent.ClearElapsedTime();
         }
 
-        private IEnumerator HideGameOverCanvas()
+        private IEnumerator HideGameOverCanvas(float roundTimeInterval)
         {
-            yield return waitForSeconds;
+            yield return new WaitForSeconds(roundTimeInterval);
 
             _gameOverCanvas.SetActive(false);
         }
@@ -101,7 +101,7 @@ namespace Controller
 
         public void PauseOrResume()
         {
-            _pauseText.text = GameState.GetCurrentGameState() == GameStates.PAUSE ? "Pause" : "Play";
+            _pauseText.text = GameState.GetCurrentGameState() == GameStates.PAUSE ? _pauseStr : _playStr;
             _gamePlayController.PauseOrResume();
             _timerComponent.ToggleTimer();
         }

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: MonsterSO
   m_EditorClassIdentifier: 
   _minSpeed: 1
-  _maxSpeed: 8
+  _maxSpeed: 50
