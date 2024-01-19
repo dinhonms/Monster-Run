@@ -14,7 +14,7 @@ namespace Behaviour
         [SerializeField] ProceduralNameGenerator _proceduralNameGenerator;
         [SerializeField] bool _useAsync;
         [SerializeField] bool _useRigidbody;
-        [SerializeField] Rigidbody2D rigidbody2D;
+        // [SerializeField] Rigidbody2D rigidbody2D;
 
         private bool isRunning;
         private float finishLinePos;
@@ -44,24 +44,12 @@ namespace Behaviour
             UnSubscribeAllEvents();
         }
 
-        // private void Update()
-        // {
-        //     if (isRunning)
-        //     {
-        //         thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
-
-        //         if (thisTransform.position.x > finishLinePos)
-        //         {
-        //             FinishRunning();
-        //         }
-        //     }
-        // }
-
-        private void FixedUpdate()
+        private void Update()
         {
-            if (_useRigidbody && isRunning)
+            if (isRunning)
             {
-                rigidbody2D.velocity = new Vector2(speed, 0);
+                // if (!_useRigidbody)
+                    thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
 
                 if (thisTransform.position.x > finishLinePos)
                 {
@@ -69,6 +57,14 @@ namespace Behaviour
                 }
             }
         }
+
+        // private void FixedUpdate()
+        // {
+        //     if (_useRigidbody && isRunning)
+        //     {
+        //         rigidbody2D.velocity = new Vector2(speed, 0);
+        //     }
+        // }
 
         private void OnSpeedChanged(float newSpeed)
         {

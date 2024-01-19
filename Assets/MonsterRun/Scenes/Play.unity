@@ -704,6 +704,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f88ae882528e3473ea2015784b3f3fed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _useTimeSlicing: 0
   _frameInterval: 2
 --- !u!1 &354094009
 GameObject:
@@ -3403,6 +3404,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _gamePlayController: {fileID: 2146100392}
   _timerComponent: {fileID: 150185541}
+  _pauseText: {fileID: 94752621}
   _displayRound: {fileID: 753663485}
   _displaySpeedRate: {fileID: 3890601}
   _displayRoundTimeInterval: {fileID: 410188068}

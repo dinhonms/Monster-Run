@@ -13,6 +13,7 @@ namespace Controller
         [SerializeField] TimerComponent _timerComponent;
 
         [Header("UI ELEMENTS")]
+        [SerializeField] TMPro.TextMeshProUGUI _pauseText;
         [SerializeField] TMPro.TextMeshProUGUI _displayRound;
         [SerializeField] TMPro.TextMeshProUGUI _displaySpeedRate;
         [SerializeField] TMPro.TextMeshProUGUI _displayRoundTimeInterval;
@@ -30,7 +31,7 @@ namespace Controller
             _gamePlayController.SubscribeOnRoundEnded(OnRoundEnded);
 
             waitForSeconds = new WaitForSeconds(1f);
-             
+
             InitializeUIState();
         }
 
@@ -56,17 +57,12 @@ namespace Controller
             SetAmountMonsters(amountMonsters);
             SetRound(_gamePlayController.GetCurrentRound());
             ClearElapsedTime();
-
-            if (_gamePlayController.GetCurrentRound() <= 1)
-                return;
-
-
         }
 
         private void OnRoundEnded(float roundTimeInterval)
         {
             _gameOverCanvas.SetActive(true);
-            // _displayRoundTimeInterval.text = new StringBuilder($"{roundTimeInterval} seconds").ToString();
+            _pauseText.text = "Pause";
 
             StartCoroutine(HideGameOverCanvas());
         }
@@ -78,18 +74,7 @@ namespace Controller
 
         private IEnumerator HideGameOverCanvas()
         {
-            // var time = roundTimeInterval;
-
             yield return waitForSeconds;
-
-            //Countdown
-            // while (time > 0)
-            // {
-            //     time--;
-            //     _displayRoundTimeInterval.text = time.ToString("f0");
-
-            //     yield return waitForSeconds;
-            // }
 
             _gameOverCanvas.SetActive(false);
         }
@@ -116,6 +101,7 @@ namespace Controller
 
         public void PauseOrResume()
         {
+            _pauseText.text = GameState.GetCurrentGameState() == GameStates.PAUSE ? "Pause" : "Play";
             _gamePlayController.PauseOrResume();
             _timerComponent.ToggleTimer();
         }

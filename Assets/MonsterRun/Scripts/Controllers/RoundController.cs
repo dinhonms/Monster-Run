@@ -24,6 +24,7 @@ namespace Controller
         private int currentMonstersCount;
 
         private Dictionary<MonsterBehaviour, bool> roundMonsters;
+        private List<MonsterBehaviour> currentRoundMonsters;
         private int amountMonsters;
         private UnityAction<float> onSpeedChanged;
         private UnityAction<float, int> onRoundStarted;
@@ -64,6 +65,8 @@ namespace Controller
                 SetUpMonstersSecondRoundAndOnwards();
             }
 
+            currentRoundMonsters = new List<MonsterBehaviour>();
+            currentRoundMonsters.AddRange(roundMonsters.Keys.ToList());
 
             roundMonsters.Clear();
             amountMonsters = 0;
@@ -213,7 +216,7 @@ namespace Controller
 
         internal void PauseGame()
         {
-            foreach (var monster in roundMonsters.Keys)
+            foreach (var monster in currentRoundMonsters)
             {
                 monster.SetIsRunning(false);
             }
@@ -221,7 +224,7 @@ namespace Controller
 
         internal void ResumeGame()
         {
-            foreach (var monster in roundMonsters.Keys)
+            foreach (var monster in currentRoundMonsters)
             {
                 monster.SetIsRunning(true);
             }
