@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Threading.Tasks;
 using ScriptableObjects;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,22 +9,28 @@ namespace Behaviour
     public class MonsterBehaviour : MonoBehaviour
     {
         [SerializeField] MonsterSO _monsterSO;
+        [SerializeField] Transform thisTransform;
         [SerializeField] SpriteRenderer _spriteRend;
         [SerializeField] ProceduralNameGenerator _proceduralNameGenerator;
+        [SerializeField] bool _useAsync;
+        [SerializeField] bool _useRigidbody;
+        [SerializeField] Rigidbody2D rigidbody2D;
 
-        private Transform thisTransform;
         private bool isRunning;
         private float finishLinePos;
+        private bool isReadyToBePooled;
         private float speed;
         private UnityAction<float> onSpeedChanged;
         private UnityAction onDidFinish;
         private string _monsterName;
         private WaitForSeconds waitForSeconds;
         private bool isTheSlowest;
+        private bool isInitialized;
+        private UnityAction<MonsterBehaviour> onBecomingReady;
+
 
         private void Awake()
         {
-            thisTransform = transform;
             _spriteRend.color = GenerateRandomColor();
             _monsterName = _proceduralNameGenerator.GenerateRandomName();
 
@@ -32,22 +39,29 @@ namespace Behaviour
             waitForSeconds = new WaitForSeconds(1f);
         }
 
-        private void OnSpeedChanged(float newSpeed)
-        {
-            this.speed = newSpeed;
-        }
-
         private void OnDestroy()
         {
-            UnSubscribeSpeedChanged();
-            onDidFinish = null;
+            UnSubscribeAllEvents();
         }
 
-        private void Update()
+        // private void Update()
+        // {
+        //     if (isRunning)
+        //     {
+        //         thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
+
+        //         if (thisTransform.position.x > finishLinePos)
+        //         {
+        //             FinishRunning();
+        //         }
+        //     }
+        // }
+
+        private void FixedUpdate()
         {
-            if (isRunning)
+            if (_useRigidbody && isRunning)
             {
-                thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
+                rigidbody2D.velocity = new Vector2(speed, 0);
 
                 if (thisTransform.position.x > finishLinePos)
                 {
@@ -56,10 +70,15 @@ namespace Behaviour
             }
         }
 
+        private void OnSpeedChanged(float newSpeed)
+        {
+            this.speed = newSpeed;
+        }
+
         private void FinishRunning()
         {
             SetIsRunning(false);
-            _spriteRend.enabled = false;
+            isInitialized = false;
 
             if (isTheSlowest)
             {
@@ -68,17 +87,37 @@ namespace Behaviour
                 onDidFinish = null;
             }
 
+            if (_useAsync)
+            {
+                DisableAsync();
+
+                return;
+            }
+
             StartCoroutine(DisableAfterTime());
 
             IEnumerator DisableAfterTime()
             {
                 yield return waitForSeconds;
 
+                isReadyToBePooled = true;
                 SetEnableb(false);
+
+                onBecomingReady?.Invoke(this);
             }
 
-            if (!isTheSlowest)
-                return;
+            async void DisableAsync()
+            {
+                await Task.Delay(1000);
+
+                if (gameObject == null)
+                    return;
+
+                isReadyToBePooled = true;
+                SetEnableb(false);
+
+                onBecomingReady?.Invoke(this);
+            }
         }
 
         private Color GenerateRandomColor()
@@ -92,16 +131,20 @@ namespace Behaviour
             return color;
         }
 
-        public void SetEnableb(bool enabled)
+        public MonsterBehaviour SetEnableb(bool enabled)
         {
             gameObject.SetActive(enabled);
-            _spriteRend.enabled = enabled;
+
+            return this;
         }
 
-        public MonsterBehaviour Initialize(float finishLinePos)
+        public MonsterBehaviour Initialize(float finishLinePos, bool isReadyToBePooled = false)
         {
             this.finishLinePos = finishLinePos;
+            this.isReadyToBePooled = isReadyToBePooled;
+
             isTheSlowest = false;
+            isInitialized = true;
 
             RandomSpeed();
             SetEnableb(true);
@@ -114,9 +157,11 @@ namespace Behaviour
             speed = _monsterSO.GetSpeed();
         }
 
-        public void SetPosition(Vector3 position)
+        public MonsterBehaviour SetPosition(Vector3 position)
         {
             thisTransform.position = position;
+
+            return this;
         }
 
         public MonsterBehaviour SetIsRunning(bool isRunning)
@@ -135,14 +180,11 @@ namespace Behaviour
             return this;
         }
 
-        private void UnSubscribeSpeedChanged()
+        private void UnSubscribeAllEvents()
         {
             this.onSpeedChanged = null;
-        }
-
-        public float GetSpeed()
-        {
-            return speed;
+            onDidFinish = null;
+            onBecomingReady = null;
         }
 
         public void SubscribeOnDidFinish(UnityAction onDidFinish)
@@ -150,9 +192,12 @@ namespace Behaviour
             this.onDidFinish += onDidFinish;
         }
 
-        public bool GetIsRunning()
+        public void TrySubscribeOnBecomingReady(UnityAction<MonsterBehaviour> onBecomingReady)
         {
-            return isRunning;
+            if (this.onBecomingReady != null)
+                return;
+
+            this.onBecomingReady = onBecomingReady;
         }
 
         public void SetGameObjectName()
@@ -160,14 +205,30 @@ namespace Behaviour
             this.gameObject.name = _monsterName;
         }
 
-        public string GetName()
-        {
-            return this._monsterName;
-        }
-
         public void SetAsSlowest()
         {
             isTheSlowest = true;
         }
+
+        public void AssignSortingOrder(int lastSortingOrder)
+        {
+            _spriteRend.sortingOrder = lastSortingOrder;
+        }
+
+        #region GET
+
+        public bool GetIsRunning() => isRunning;
+
+        public string GetName() => this._monsterName;
+        public float GetSpeed() => speed;
+
+        public SpriteRenderer GetSpriteRend() => _spriteRend;
+
+        public bool GetIsReadyToBePooled() => isReadyToBePooled;
+
+        public bool GetIsInitialized() => isInitialized;
+
+        #endregion
+
     }
 }

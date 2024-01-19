@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Util;
@@ -17,25 +18,36 @@ namespace Controller
         [SerializeField] TMPro.TextMeshProUGUI _displayRoundTimeInterval;
         [SerializeField] TMPro.TextMeshProUGUI _displayTotalMonstersCreated;
         [SerializeField] TMPro.TextMeshProUGUI _displayElapsedTime;
-        [SerializeField] Button _playButton;
-        [SerializeField] Button _pauseButton;
-        [SerializeField] Canvas _gameOverCanvas;
+        [SerializeField] GameObject _playButtonOb;
+        [SerializeField] GameObject _pauseButtonObj;
+        [SerializeField] GameObject _gameOverCanvas;
         private WaitForSeconds waitForSeconds;
+        StringBuilder timer = new StringBuilder();
 
         private void Start()
         {
-            _gamePlayController.SubscribeOnStartNextRound(OnStartRound);
+            _gamePlayController.SubscribeOnRoundStarted(OnStartRound);
+            _gamePlayController.SubscribeOnRoundEnded(OnRoundEnded);
 
             waitForSeconds = new WaitForSeconds(1f);
+             
+            InitializeUIState();
+        }
+
+        private void InitializeUIState()
+        {
+            _pauseButtonObj.SetActive(false);
+            _playButtonOb.SetActive(true);
+            _gameOverCanvas.SetActive(false);
         }
 
         private void Update()
         {
-            if(GameState.GetCurrentGameState() == GameStates.PLAY)
+            if (GameState.GetCurrentGameState() == GameStates.PLAY)
             {
                 var timerFormat = _timerComponent.GetElapsedTime();
 
-                _displayElapsedTime.text = string.Format("{0:D2}:{1:D2}:{2:D1}", timerFormat.Hours, timerFormat.Minutes, timerFormat.Seconds);
+                _displayElapsedTime.text = new StringBuilder().AppendFormat("{0:D2}:{1:D2}:{2:D1}", timerFormat.Hours, timerFormat.Minutes, timerFormat.Seconds).ToString();
             }
         }
 
@@ -48,8 +60,15 @@ namespace Controller
             if (_gamePlayController.GetCurrentRound() <= 1)
                 return;
 
-            // _gameOverCanvas.enabled = true;
-            // StartCoroutine(StartCountNextRoundTime(roundTimeInterval, amountMonsters));
+
+        }
+
+        private void OnRoundEnded(float roundTimeInterval)
+        {
+            _gameOverCanvas.SetActive(true);
+            // _displayRoundTimeInterval.text = new StringBuilder($"{roundTimeInterval} seconds").ToString();
+
+            StartCoroutine(HideGameOverCanvas());
         }
 
         private void ClearElapsedTime()
@@ -57,21 +76,22 @@ namespace Controller
             _timerComponent.ClearElapsedTime();
         }
 
-        private IEnumerator StartCountNextRoundTime(float roundTimeInterval, int amountMonsters)
+        private IEnumerator HideGameOverCanvas()
         {
-            var time = roundTimeInterval;
+            // var time = roundTimeInterval;
 
             yield return waitForSeconds;
 
-            while (time > 0)
-            {
-                time--;
-                _displayRoundTimeInterval.text = time.ToString("f0");
+            //Countdown
+            // while (time > 0)
+            // {
+            //     time--;
+            //     _displayRoundTimeInterval.text = time.ToString("f0");
 
-                yield return waitForSeconds;
-            }
+            //     yield return waitForSeconds;
+            // }
 
-            _gameOverCanvas.enabled = true;
+            _gameOverCanvas.SetActive(false);
         }
 
         internal void SetRound(int currentRound)
@@ -84,8 +104,8 @@ namespace Controller
         public void Play()
         {
             _gamePlayController.Play();
-            _playButton.gameObject.SetActive(false);
-            _pauseButton.gameObject.SetActive(true);
+            _playButtonOb.SetActive(false);
+            _pauseButtonObj.SetActive(true);
             _timerComponent.ToggleTimer();
         }
 

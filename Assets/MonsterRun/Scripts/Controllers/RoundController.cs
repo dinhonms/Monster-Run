@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Architecture;
 using Behaviour;
 using UnityEngine;
@@ -22,13 +23,15 @@ namespace Controller
         private int currentRound = 0;
         private int currentMonstersCount;
 
-        private List<MonsterBehaviour> roundMonsters;
+        private Dictionary<MonsterBehaviour, bool> roundMonsters;
         private int amountMonsters;
         private UnityAction<float> onSpeedChanged;
-        private UnityAction<float, int> onStarRound;
+        private UnityAction<float, int> onRoundStarted;
 
         private Dictionary<string, bool> checkFinishDict = new Dictionary<string, bool>();
         private WaitForSeconds waitForSeconds;
+        [SerializeField] bool _useAsync;
+        private Action<float> onRoundEnded;
 
         private void Awake()
         {
@@ -39,23 +42,81 @@ namespace Controller
         private void OnDestroy()
         {
             onSpeedChanged = null;
-            onStarRound = null;
+            onRoundStarted = null;
+            onRoundEnded = null;
         }
 
         public void InitializeRound()
         {
-            if (checkFinishDict.Any())
-                checkFinishDict.Clear();
-
             currentRound++;
 
-            roundMonsters = new List<MonsterBehaviour>();
+            if (currentRound == 1)
+            {
+                roundMonsters = new Dictionary<MonsterBehaviour, bool>();
+                amountMonsters = GetMonstersByRound(currentRound);
+                onRoundStarted?.Invoke(_nextRoundInterval, currentRound);
 
-            amountMonsters = GetMonstersByRound();
+                SetUpMonsters();
+            }
 
-            SetUpMonsters();
+            else
+            {
+                SetUpMonstersSecondRoundAndOnwards();
+            }
 
-            onStarRound?.Invoke(_nextRoundInterval, amountMonsters);
+
+            roundMonsters.Clear();
+            amountMonsters = 0;
+
+            //prepares for the second round and onwards
+            PrepareNextRound();
+        }
+
+        private void PrepareNextRound()
+        {
+            int nextRound = currentRound + 1;
+            roundMonsters = new Dictionary<MonsterBehaviour, bool>();
+
+            amountMonsters = GetMonstersByRound(nextRound);
+        }
+
+        private void SetUpMonstersSecondRoundAndOnwards()
+        {
+            if (roundMonsters == null || !roundMonsters.Any())
+                return;
+
+            onRoundStarted?.Invoke(_nextRoundInterval, amountMonsters);
+
+            for (int i = roundMonsters.Count; i < amountMonsters; i++)
+            {
+                var monster = MonsterFactory.Instance.GetOrCreateMonster();
+                roundMonsters.Add(monster, false);
+            }
+
+            MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault().Key;
+            var cSpeed = roundMonsters.ElementAt(0).Key.GetSpeed();
+
+            for (int a = 0; a < roundMonsters.Count; a++)
+            {
+                var cMonst = roundMonsters.ElementAt(a).Key;
+
+                if (!roundMonsters.ElementAt(a).Value)
+                    cMonst.Initialize(_finishLine.position.x);
+
+                cMonst.SetIsRunning(true)
+                    .TrySubscribeOnBecomingReady(OnBecomingReady);
+
+                if (cMonst.GetSpeed() < cSpeed)
+                {
+                    cSpeed = cMonst.GetSpeed();
+                    slowestMonster = cMonst;
+                }
+            }
+
+            slowestMonster.SubscribeOnDidFinish(OnMonsterDidFinish);
+            slowestMonster.SetAsSlowest();
+
+            slowestMonster = null;
         }
 
         private void SetUpMonsters()
@@ -63,38 +124,63 @@ namespace Controller
             for (int i = 0; i < amountMonsters; i++)
             {
                 var monster = MonsterFactory.Instance.GetOrCreateMonster();
-                roundMonsters.Add(monster);
+                roundMonsters.Add(monster, false);
             }
 
-            MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault();
-            var cSpeed = roundMonsters[0].GetSpeed();
+            MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault().Key;
+            var cSpeed = roundMonsters.ElementAt(0).Key.GetSpeed();
 
             for (int a = 0; a < roundMonsters.Count; a++)
             {
-                roundMonsters[a].Initialize(_finishLine.position.x)
-                    .SetIsRunning(true)
-                    .SubscribeSpeedChanged(onSpeedChanged);
+                var cMonst = roundMonsters.ElementAt(a).Key;
 
-                if (roundMonsters[a].GetSpeed() < cSpeed)
+                cMonst.Initialize(_finishLine.position.x)
+                    .SetIsRunning(true)
+                    .TrySubscribeOnBecomingReady(OnBecomingReady);
+
+                if (cMonst.GetSpeed() < cSpeed)
                 {
-                    cSpeed = roundMonsters[a].GetSpeed();
-                    slowestMonster = roundMonsters[a];
+                    cSpeed = cMonst.GetSpeed();
+                    slowestMonster = cMonst;
                 }
             }
 
             slowestMonster.SubscribeOnDidFinish(OnMonsterDidFinish);
             slowestMonster.SetAsSlowest();
+
+            slowestMonster = null;
+        }
+
+        private void OnBecomingReady(MonsterBehaviour monster)
+        {
+            monster.Initialize(_finishLine.position.x)
+                    .SetIsRunning(false)
+                    .SetEnableb(true)
+                    .SetPosition(MonsterPool.Instance.GetPreparedPosition())
+                    .TrySubscribeOnBecomingReady(OnBecomingReady);
+
+            if (roundMonsters != null)
+            {
+                roundMonsters.Add(monster, true);
+            }
         }
 
         private void OnMonsterDidFinish()
         {
+            if (_useAsync)
+            {
+                HandleNextRoundAsync();
+
+                return;
+            }
+
             StartCoroutine(HandleNextRound());
         }
 
         [Obsolete]
         private bool IsTheresAMonsterStillRunning()
         {
-            foreach (var monster in roundMonsters)
+            foreach (var monster in roundMonsters.Keys)
             {
                 if (monster.GetIsRunning())
                 {
@@ -108,14 +194,26 @@ namespace Controller
 
         private IEnumerator HandleNextRound()
         {
+            onRoundEnded?.Invoke(_nextRoundInterval);
+
             yield return waitForSeconds;
+
+            InitializeRound();
+        }
+
+
+        async void HandleNextRoundAsync()
+        {
+            onRoundEnded?.Invoke(_nextRoundInterval);
+
+            await Task.Delay((int)_nextRoundInterval * 1000);
 
             InitializeRound();
         }
 
         internal void PauseGame()
         {
-            foreach (var monster in roundMonsters)
+            foreach (var monster in roundMonsters.Keys)
             {
                 monster.SetIsRunning(false);
             }
@@ -123,13 +221,13 @@ namespace Controller
 
         internal void ResumeGame()
         {
-            foreach (var monster in roundMonsters)
+            foreach (var monster in roundMonsters.Keys)
             {
                 monster.SetIsRunning(true);
             }
         }
 
-        private int GetMonstersByRound()
+        private int GetMonstersByRound(int currentRound)
         {
             currentMonstersCount = CalcFibonacci(currentRound);
 
@@ -156,7 +254,12 @@ namespace Controller
 
         internal void SubscribeOnStartNextRound(UnityAction<float, int> onNextRound)
         {
-            this.onStarRound += onNextRound;
+            this.onRoundStarted += onNextRound;
+        }
+
+        internal void SubscribeOnRoundEnded(Action<float> onRoundEnded)
+        {
+            this.onRoundEnded += onRoundEnded;
         }
     }
 }
