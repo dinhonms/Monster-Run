@@ -21,10 +21,10 @@ namespace Controller
 
         private int currentRound = 0;
 
+        //Dictionary can perform better than List
         private Dictionary<MonsterBehaviour, bool> roundMonsters;
         private List<MonsterBehaviour> currentRoundMonsters;
         private int amountMonsters;
-        private UnityAction<float> onSpeedChanged;
         private UnityAction<float, int> onRoundStarted;
         private WaitForSeconds waitForSeconds;
         [SerializeField] bool _useAsync;
@@ -38,7 +38,6 @@ namespace Controller
 
         private void OnDestroy()
         {
-            onSpeedChanged = null;
             onRoundStarted = null;
             onRoundEnded = null;
         }
@@ -214,19 +213,11 @@ namespace Controller
             }
         }
 
-        internal int GetCurrentRound()
-        {
-            return currentRound;
-        }
+        internal int GetCurrentRound() => currentRound;
 
-        internal void SetSpeedChanged(float value)
+        internal void SubscribeOnRoundStarted(UnityAction<float, int> onRoundStarted)
         {
-            onSpeedChanged?.Invoke(value);
-        }
-
-        internal void SubscribeOnStartNextRound(UnityAction<float, int> onNextRound)
-        {
-            this.onRoundStarted += onNextRound;
+            this.onRoundStarted += onRoundStarted;
         }
 
         internal void SubscribeOnRoundEnded(Action<float> onRoundEnded)

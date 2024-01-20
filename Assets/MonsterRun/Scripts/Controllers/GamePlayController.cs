@@ -49,7 +49,7 @@ namespace Controller
 
         public void SubscribeOnRoundStarted(UnityAction<float, int> onNextRound)
         {
-            RoundController.Instance.SubscribeOnStartNextRound(onNextRound);
+            RoundController.Instance.SubscribeOnRoundStarted(onNextRound);
         }
 
         public void SubscribeOnRoundEnded(Action<float> onRoundEnded)

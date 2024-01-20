@@ -18,7 +18,6 @@ namespace Behaviour
         private bool isRunning;
         private float finishLinePos;
         private float speed;
-        private UnityAction<float> onSpeedChanged;
         private UnityAction onDidFinish;
         private string _monsterName;
         private WaitForSeconds waitForSeconds;
@@ -88,6 +87,7 @@ namespace Behaviour
                 onBecomingReady?.Invoke(this);
             }
 
+            ///Sometimes async could be better than coroutines
             async void DisableAsync()
             {
                 await Task.Delay(1000);
@@ -113,18 +113,8 @@ namespace Behaviour
             return this;
         }
 
-        public MonsterBehaviour SubscribeSpeedChanged(UnityAction<float> onSpeedChanged)
-        {
-            this.onSpeedChanged += onSpeedChanged;
-
-            this.onSpeedChanged += OnSpeedChanged;
-
-            return this;
-        }
-
         private void UnSubscribeAllEvents()
         {
-            this.onSpeedChanged = null;
             onDidFinish = null;
             onBecomingReady = null;
         }

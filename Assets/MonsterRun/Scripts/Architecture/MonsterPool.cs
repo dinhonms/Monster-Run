@@ -11,7 +11,6 @@ namespace Architecture
     {
         public static MonsterPool Instance;
 
-
         [SerializeField] MonsterBehaviour _monsterPrefab;
         [SerializeField] Transform _pool;
         [SerializeField] int _startMonstersAmount = 10;
@@ -23,21 +22,18 @@ namespace Architecture
 
         private Dictionary<MonsterBehaviour, bool> monsters = new Dictionary<MonsterBehaviour, bool>();
         private int lastSortingOrder;
-        private Vector3 preparedPosistion;
-        private int fixedAmount;
+        private int desiredMonstersForThisRound;
         private int countMonster;
-        private int min;
+        private int firstIndex;
 
         private void Awake()
         {
             Instance = this;
         }
 
-
         private void Start()
         {
             StartMonstersPool();
-            preparedPosistion = new Vector3(_startPoint.position.x - _preparedPosXOffset, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
         }
 
         private void StartMonstersPool()
@@ -62,23 +58,21 @@ namespace Architecture
             return monster;
         }
 
-        private bool IsAvailable(MonsterBehaviour monster)
-        {
-            return !monster.gameObject.activeInHierarchy;
-        }
+        private bool IsAvailable(MonsterBehaviour monster) => !monster.gameObject.activeInHierarchy;
 
         public MonsterPool ResetCountMonsters(int fixedAmount)
         {
-            this.fixedAmount = fixedAmount;
+            this.desiredMonstersForThisRound = fixedAmount;
+
             countMonster = 0;
-            min = 0;
+            firstIndex = 0;
 
             return this;
         }
 
         public void GetOrCreateMonster(int amountMonsters)
         {
-            if (countMonster >= fixedAmount)
+            if (countMonster >= desiredMonstersForThisRound)
                 return;
 
             var monster = GetOrCreateMonster();
@@ -92,7 +86,7 @@ namespace Architecture
 
         public MonsterBehaviour GetOrCreateMonster()
         {
-            if (min > monsters.Count - 1)
+            if (firstIndex > monsters.Count - 1)
             {
                 MonsterBehaviour newMonster = InstantiateMonster();
                 newMonster.SetEnableb(true);
@@ -103,7 +97,7 @@ namespace Architecture
                 return newMonster;
             }
 
-            var monst = monsters.ElementAt(min).Key;
+            var monst = monsters.ElementAt(firstIndex).Key;
 
             if (IsAvailable(monst))
             {
@@ -114,7 +108,7 @@ namespace Architecture
                 return monst;
             }
 
-            min++;
+            firstIndex++;
 
             var monster = GetOrCreateMonster();
 
@@ -128,10 +122,6 @@ namespace Architecture
 
             return yOffset;
         }
-
-        public Vector3 GetPreparedPosition()
-        {
-            return new Vector3(_startPoint.position.x, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
-        }
+        
     }
 }

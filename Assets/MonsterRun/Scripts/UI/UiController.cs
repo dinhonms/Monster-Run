@@ -106,12 +106,6 @@ namespace Controller
             _timerComponent.ToggleTimer();
         }
 
-        public void ChangeSpeed(float value)
-        {
-            _displaySpeedRate.text = value.ToString("f2");
-            _gamePlayController.SetSpeedChanged(value);
-        }
-
         #endregion
     }
 }
