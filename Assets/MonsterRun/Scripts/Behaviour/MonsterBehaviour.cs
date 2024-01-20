@@ -24,7 +24,6 @@ namespace Behaviour
         private WaitForSeconds waitForSeconds;
         private bool isTheSlowest;
         private UnityAction<MonsterBehaviour> onBecomingReady;
-        private bool alreadyFinished;
 
         private void Awake()
         {
@@ -152,14 +151,14 @@ namespace Behaviour
 
         public SpriteRenderer GetSpriteRend() => _spriteRend;
 
-        public bool AlreadyFinished() => alreadyFinished;
-
         #endregion
 
         private void RandomSpeed()
         {
             speed = _monsterSO.GetSpeed();
         }
+
+        public bool IsEnabled() => gameObject.activeInHierarchy;
 
         #region SETTERS
 
@@ -180,7 +179,6 @@ namespace Behaviour
         public MonsterBehaviour SetIsRunning(bool isRunning)
         {
             this.isRunning = isRunning;
-            alreadyFinished = false;
 
             return this;
         }
@@ -198,13 +196,6 @@ namespace Behaviour
         public void AssignSortingOrder(int lastSortingOrder)
         {
             _spriteRend.sortingOrder = lastSortingOrder;
-        }
-
-        public MonsterBehaviour SetAlreadyFinished()
-        {
-            alreadyFinished = true;
-
-            return this;
         }
 
         #endregion

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Behaviour;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Architecture
 {
@@ -22,6 +24,9 @@ namespace Architecture
         private Dictionary<MonsterBehaviour, bool> monsters = new Dictionary<MonsterBehaviour, bool>();
         private int lastSortingOrder;
         private Vector3 preparedPosistion;
+        private int fixedAmount;
+        private int countMonster;
+        private int min;
 
         private void Awake()
         {
@@ -62,27 +67,58 @@ namespace Architecture
             return !monster.gameObject.activeInHierarchy;
         }
 
+        public MonsterPool ResetCountMonsters(int fixedAmount)
+        {
+            this.fixedAmount = fixedAmount;
+            countMonster = 0;
+            min = 0;
+
+            return this;
+        }
+
+        public void GetOrCreateMonster(int amountMonsters)
+        {
+            if (countMonster >= fixedAmount)
+                return;
+
+            var monster = GetOrCreateMonster();
+
+            RoundDTO.TryAddMosnter(monster);
+
+            countMonster++;
+
+            GetOrCreateMonster(countMonster);
+        }
+
         public MonsterBehaviour GetOrCreateMonster()
         {
-            foreach (var monst in monsters.Keys)
+            if (min > monsters.Count - 1)
             {
-                if (IsAvailable(monst))
-                {
-                    Vector3 newPosition = new Vector3(_startPoint.position.x, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
-                    monst.SetPosition(newPosition);
-                    monst.SetEnableb(true);
+                MonsterBehaviour newMonster = InstantiateMonster();
+                newMonster.SetEnableb(true);
 
-                    return monst;
-                }
+                if (monsters.Count <= _maxCapacity)
+                    monsters.Add(newMonster, false);
+
+                return newMonster;
             }
 
-            MonsterBehaviour newMonster = InstantiateMonster();
-            newMonster.SetEnableb(true);
+            var monst = monsters.ElementAt(min).Key;
 
-            if (monsters.Count <= _maxCapacity)
-                monsters.Add(newMonster, false);
+            if (IsAvailable(monst))
+            {
+                Vector3 newPosition = new Vector3(_startPoint.position.x, _startPoint.position.y + GetYOffsetPos(), _startPoint.position.z);
+                monst.SetPosition(newPosition);
+                monst.SetEnableb(true);
 
-            return newMonster;
+                return monst;
+            }
+
+            min++;
+
+            var monster = GetOrCreateMonster();
+
+            return monster;
         }
 
         private float GetYOffsetPos()

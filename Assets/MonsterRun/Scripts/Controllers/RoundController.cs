@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Architecture;
 using Behaviour;
@@ -21,7 +20,6 @@ namespace Controller
         [SerializeField] float _nextRoundInterval = 5f;
 
         private int currentRound = 0;
-        private int currentMonstersCount;
 
         private Dictionary<MonsterBehaviour, bool> roundMonsters;
         private List<MonsterBehaviour> currentRoundMonsters;
@@ -72,7 +70,7 @@ namespace Controller
         private void SetFirstRound()
         {
             roundMonsters = new Dictionary<MonsterBehaviour, bool>();
-            amountMonsters = GetMonstersByRound(currentRound);
+            amountMonsters = FibonacciRound.GetMonstersByRound(currentRound);
             onRoundStarted?.Invoke(_nextRoundInterval, currentRound);
 
             SetUpMonsters();
@@ -83,23 +81,19 @@ namespace Controller
             int nextRound = currentRound + 1;
             roundMonsters = new Dictionary<MonsterBehaviour, bool>();
 
-            amountMonsters = GetMonstersByRound(nextRound);
+            amountMonsters = FibonacciRound.GetMonstersByRound(nextRound);
         }
 
         private void SetUpMonstersSecondRoundAndOnwards()
         {
-            if (roundMonsters == null || !roundMonsters.Any())
-                return;
-
             onRoundStarted?.Invoke(_nextRoundInterval, amountMonsters);
 
-            for (int i = roundMonsters.Count; i < amountMonsters; i++)
-            {
-                var monster = MonsterFactory.Instance.GetOrCreateMonster();
+            MonsterFactory.Instance.GetOrCreateMonster(amountMonsters);
 
-                if (!roundMonsters.ContainsKey(monster))
-                    roundMonsters.Add(monster, false);
-            }
+            roundMonsters = RoundDTO.RoundMonsters;
+
+            if (roundMonsters == null || !roundMonsters.Any())
+                return;
 
             MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault().Key;
             var cSpeed = roundMonsters.ElementAt(0).Key.GetSpeed();
@@ -108,11 +102,8 @@ namespace Controller
             {
                 var cMonst = roundMonsters.ElementAt(a).Key;
 
-                if (!roundMonsters.ElementAt(a).Value)
-                    cMonst.Initialize(_finishLine.position.x);
-
-                cMonst.SetIsRunning(true)
-                    .TrySubscribeOnBecomingReady(OnBecomingReady);
+                cMonst.Initialize(_finishLine.position.x)
+                    .SetIsRunning(true);
 
                 if (cMonst.GetSpeed() < cSpeed)
                 {
@@ -129,13 +120,9 @@ namespace Controller
 
         private void SetUpMonsters()
         {
-            for (int i = 0; i < amountMonsters; i++)
-            {
-                var monster = MonsterFactory.Instance.GetOrCreateMonster();
+            MonsterFactory.Instance.GetOrCreateMonster(amountMonsters);
 
-                if (!roundMonsters.ContainsKey(monster))
-                    roundMonsters.Add(monster, false);
-            }
+            roundMonsters = RoundDTO.RoundMonsters;
 
             MonsterBehaviour slowestMonster = roundMonsters.FirstOrDefault().Key;
             var cSpeed = roundMonsters.ElementAt(0).Key.GetSpeed();
@@ -145,8 +132,7 @@ namespace Controller
                 var cMonst = roundMonsters.ElementAt(a).Key;
 
                 cMonst.Initialize(_finishLine.position.x)
-                    .SetIsRunning(true)
-                    .TrySubscribeOnBecomingReady(OnBecomingReady);
+                    .SetIsRunning(true);
 
                 if (cMonst.GetSpeed() < cSpeed)
                 {
@@ -159,19 +145,6 @@ namespace Controller
             slowestMonster.SetAsSlowest();
 
             slowestMonster = null;
-        }
-
-        private void OnBecomingReady(MonsterBehaviour monster)
-        {
-            monster.Initialize(_finishLine.position.x)
-                    .SetIsRunning(false)
-                    .SetEnableb(true)
-                    .SetAlreadyFinished()
-                    .SetPosition(MonsterPool.Instance.GetPreparedPosition())
-                    .TrySubscribeOnBecomingReady(OnBecomingReady);
-
-            if (roundMonsters != null && !roundMonsters.ContainsKey(monster))
-                roundMonsters.Add(monster, true);
         }
 
         private void OnMonsterDidFinish()
@@ -193,7 +166,6 @@ namespace Controller
             {
                 if (monster.GetIsRunning())
                 {
-                    // Debug.Log(new StringBuilder($"Monster {monster.GetName()} is istill Running!"));
                     return true;
                 }
             }
@@ -224,9 +196,9 @@ namespace Controller
         {
             foreach (var monster in currentRoundMonsters)
             {
-                if (monster.AlreadyFinished())
+                if (!monster.IsEnabled())
                     return;
-                    
+
                 monster.SetIsRunning(false);
             }
         }
@@ -235,26 +207,11 @@ namespace Controller
         {
             foreach (var monster in currentRoundMonsters)
             {
-                if (monster.AlreadyFinished())
+                if (!monster.IsEnabled())
                     return;
 
                 monster.SetIsRunning(true);
             }
-        }
-
-        private int GetMonstersByRound(int currentRound)
-        {
-            currentMonstersCount = CalcFibonacci(currentRound);
-
-            return currentMonstersCount;
-        }
-
-        private int CalcFibonacci(int number)
-        {
-            if (number < 3)
-                return 1;
-
-            return CalcFibonacci(number - 1) + CalcFibonacci(number - 2);
         }
 
         internal int GetCurrentRound()

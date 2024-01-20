@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Behaviour;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Architecture
 {
@@ -14,9 +15,9 @@ namespace Architecture
             Instance = this;
         }
 
-        public MonsterBehaviour GetOrCreateMonster()
+        public void GetOrCreateMonster(int amountMonsters)
         {
-            return MonsterPool.Instance.GetOrCreateMonster();
+            MonsterPool.Instance.ResetCountMonsters(amountMonsters).GetOrCreateMonster(amountMonsters);
         }
     }
 }
