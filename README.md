@@ -3,6 +3,13 @@
 ## Overview
 The primary objective is to implement a dynamic Monster run game with specific behaviors and UI elements.
 
+## Main Specs 
+* Assembly Definition
+* Factory
+* Singleton
+* ObjectPooling
+* Game State
+* Recursion
 
 ## Assets
 - The assets to be used will be sent along side the instructions.
