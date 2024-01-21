@@ -32,7 +32,13 @@ namespace Controller
             _gamePlayController.SubscribeOnRoundStarted(OnStartRound);
             _gamePlayController.SubscribeOnRoundEnded(OnRoundEnded);
 
+            _timerComponent.OnTimeChanged += UpdateTime;
             InitializeUIState();
+        }
+
+        private void UpdateTime(TimeSpan time)
+        {
+            _displayElapsedTime.text = new StringBuilder().AppendFormat("{0:D2}:{1:D2}:{2:D1}", time.Hours, time.Minutes, time.Seconds).ToString();
         }
 
         private void InitializeUIState()
@@ -42,27 +48,21 @@ namespace Controller
             _gameOverCanvas.SetActive(false);
         }
 
-        private void Update()
-        {
-            if (GameState.GetCurrentGameState() == GameStates.PLAY)
-            {
-                var timerFormat = _timerComponent.GetElapsedTime();
-
-                _displayElapsedTime.text = new StringBuilder().AppendFormat("{0:D2}:{1:D2}:{2:D1}", timerFormat.Hours, timerFormat.Minutes, timerFormat.Seconds).ToString();
-            }
-        }
-
         private void OnStartRound(float roundTimeInterval, int amountMonsters)
         {
             SetAmountMonsters(amountMonsters);
             SetRound(_gamePlayController.GetCurrentRound());
             ClearElapsedTime();
+            _displayElapsedTime.text = "00:00:00";
+            _timerComponent.StartTimer();
         }
 
         private void OnRoundEnded(float roundTimeInterval)
         {
             _gameOverCanvas.SetActive(true);
             _pauseText.text = _pauseStr;
+            _timerComponent.StopTimer();
+            _displayElapsedTime.text = "00:00:00";
 
             StartCoroutine(HideGameOverCanvas(roundTimeInterval));
         }
@@ -91,7 +91,7 @@ namespace Controller
             _gamePlayController.Play();
             _playButtonOb.SetActive(false);
             _pauseButtonObj.SetActive(true);
-            _timerComponent.ToggleTimer();
+            _timerComponent.StartTimer();
         }
 
         private void SetAmountMonsters(int amountMonsters)

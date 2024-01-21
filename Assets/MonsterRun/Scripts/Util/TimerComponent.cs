@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace Util
 {
@@ -11,6 +12,10 @@ namespace Util
 
         private float timer;
         private bool startTimer;
+
+        public UnityAction<TimeSpan> OnTimeChanged;
+
+        private float currentTime;
 
         public void ToggleTimer()
         {
@@ -29,24 +34,31 @@ namespace Util
             if (startTimer)
             {
                 timer += Time.deltaTime;
+
+                currentTime = timer;
+
+                if (currentTime >= 1f)
+                {
+                    OnTimeChanged?.Invoke(GetElapsedTime());
+                    currentTime = 0;
+                }
             }
-
-            // if (_useTimeSlicing)
-            // {
-            //     if (Time.frameCount % _frameInterval == 0)
-            //     {
-            //         if (startTimer)
-            //         {
-            //             timer += Time.deltaTime;
-            //         }
-            //     }
-            // }
-
         }
 
         public void ClearElapsedTime()
         {
             timer = 0f;
+            currentTime = 0;
+        }
+
+        public void StopTimer()
+        {
+            startTimer = false;
+        }
+
+        public void StartTimer()
+        {
+            startTimer = true;
         }
     }
 }

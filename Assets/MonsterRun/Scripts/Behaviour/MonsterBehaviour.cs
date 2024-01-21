@@ -14,6 +14,7 @@ namespace Behaviour
         [SerializeField] Transform thisTransform;
         [SerializeField] SpriteRenderer _spriteRend;
         [SerializeField] bool _useAsync;
+        [SerializeField] Rigidbody2D _rigidbody2D;
 
         private bool isRunning;
         private float finishLinePos;
@@ -23,6 +24,7 @@ namespace Behaviour
         private WaitForSeconds waitForSeconds;
         private bool isTheSlowest;
         private UnityAction<MonsterBehaviour> onBecomingReady;
+        
 
         private void Awake()
         {
@@ -43,7 +45,7 @@ namespace Behaviour
         {
             if (isRunning)
             {
-                thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
+                // thisTransform.Translate(speed * Time.deltaTime, 0f, 0f);
 
                 if (thisTransform.position.x > finishLinePos)
                 {
@@ -110,6 +112,9 @@ namespace Behaviour
             RandomSpeed();
             SetEnableb(true);
 
+            _rigidbody2D.simulated = true;
+            _rigidbody2D.AddForce(Vector2.right * speed);
+
             return this;
         }
 
@@ -169,6 +174,7 @@ namespace Behaviour
         public MonsterBehaviour SetIsRunning(bool isRunning)
         {
             this.isRunning = isRunning;
+            this._rigidbody2D.simulated = isRunning;
 
             return this;
         }

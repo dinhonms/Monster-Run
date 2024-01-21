@@ -195,9 +195,6 @@ namespace Controller
         {
             foreach (var monster in currentRoundMonsters)
             {
-                if (!monster.IsEnabled())
-                    return;
-
                 monster.SetIsRunning(false);
             }
         }
@@ -206,9 +203,6 @@ namespace Controller
         {
             foreach (var monster in currentRoundMonsters)
             {
-                if (!monster.IsEnabled())
-                    return;
-
                 monster.SetIsRunning(true);
             }
         }
